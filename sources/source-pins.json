@@ -1,6 +1,6 @@
 {
   "moto_sublevel": "v5.15.211",
   "ksun_tag": "v3.4.2",
-  "wildkernels_commit": "b61ceb600da12ef1093597d8a4dfc15d0297b3c1",
+  "wildkernels_commit": "10c98a49a212c60eb81a6928625c041f00d0d190",
   "susfs_tag": "v1.5.2+_R28"
 }
