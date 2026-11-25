@@ -36,10 +36,11 @@ SUMMARY="${SUMMARY}| KSU-Next | \`${KSUN_TAG}\` | [Releases](https://github.com/
 SUMMARY="${SUMMARY}| SUSFS module | \`${SUSFS_VERSION}\` | [Download](${SUSFS_MODULE_URL}) |"$'\n\n'
 
 SUMMARY="${SUMMARY}## Features"$'\n\n'
-SUMMARY="${SUMMARY}- SUSFS"$'\n'
-SUMMARY="${SUMMARY}- BBR and Westwood TCP"$'\n'
+SUMMARY="${SUMMARY}- SUSFS v2.4.0"$'\n'
+SUMMARY="${SUMMARY}- BBRv3 (default), BBR and Westwood TCP"$'\n'
 SUMMARY="${SUMMARY}- BBG on the KSU-Next variant"$'\n'
-SUMMARY="${SUMMARY}- Thin LTO"$'\n'
+SUMMARY="${SUMMARY}- NTSync & LRNG"$'\n'
+SUMMARY="${SUMMARY}- Neutron Clang + Thin LTO"$'\n'
 SUMMARY="${SUMMARY}- Droidspaces"$'\n\n'
 
 SUMMARY="${SUMMARY}## Variants and downloads"$'\n\n'

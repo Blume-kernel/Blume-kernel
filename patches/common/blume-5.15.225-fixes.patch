@@ -1,0 +1,81 @@
+diff --git a/.gitignore b/.gitignore
+--- a/.gitignore
++++ b/.gitignore
+@@ -164,3 +164,4 @@ arch/*/configs/vendor/*_defconfig
+ 
+ # Documentation toolchain
+ sphinx_*/
++out/
+diff --git a/Makefile b/Makefile
+--- a/Makefile
++++ b/Makefile
+@@ -2122,3 +2122,6 @@ FORCE:
+ # Declare the contents of the PHONY variable as phony.  We keep that
+ # information in a variable so we can use it in if_changed and friends.
+ .PHONY: $(PHONY)
++KBUILD_CFLAGS += -Wno-error
++KBUILD_CFLAGS += -Wno-sometimes-uninitialized
++KBUILD_CFLAGS += -Wno-unused-but-set-variable
+diff --git a/arch/arm64/kvm/sys_regs.c b/arch/arm64/kvm/sys_regs.c
+--- a/arch/arm64/kvm/sys_regs.c
++++ b/arch/arm64/kvm/sys_regs.c
+@@ -2790,7 +2790,7 @@ int kvm_arm_copy_sys_reg_indices(struct kvm_vcpu *vcpu, u64 __user *uindices)
+ void kvm_sys_reg_table_init(void)
+ {
+ 	unsigned int i;
+-	struct sys_reg_desc clidr;
++	struct sys_reg_desc clidr = { 0 };
+ 
+ 	/* Make sure tables are unique and in order. */
+ 	BUG_ON(check_sysreg_table(sys_reg_descs, ARRAY_SIZE(sys_reg_descs), false));
+diff --git a/drivers/i3c/master.c b/drivers/i3c/master.c
+--- a/drivers/i3c/master.c
++++ b/drivers/i3c/master.c
+@@ -900,7 +900,7 @@ int i3c_master_defslvs_locked(struct i3c_master_controller *master)
+ 	struct i3c_ccc_dev_desc *desc;
+ 	struct i3c_ccc_cmd_dest dest;
+ 	struct i3c_dev_desc *i3cdev;
+-	struct i2c_dev_desc *i2cdev;
++	struct i2c_dev_desc *i2cdev = NULL;
+ 	struct i3c_ccc_cmd cmd;
+ 	struct i3c_bus *bus;
+ 	bool send = false;
+@@ -1680,7 +1680,7 @@ static int i3c_master_bus_init(struct i3c_master_controller *master)
+ 	enum i3c_addr_slot_status status;
+ 	struct i2c_dev_boardinfo *i2cboardinfo;
+ 	struct i3c_dev_boardinfo *i3cboardinfo;
+-	struct i2c_dev_desc *i2cdev;
++	struct i2c_dev_desc *i2cdev = NULL;
+ 	int ret;
+ 
+ 	/*
+@@ -2194,7 +2194,7 @@ static const struct i2c_algorithm i3c_master_i2c_algo = {
+ static int i3c_master_i2c_adapter_init(struct i3c_master_controller *master)
+ {
+ 	struct i2c_adapter *adap = i3c_master_to_i2c_adapter(master);
+-	struct i2c_dev_desc *i2cdev;
++	struct i2c_dev_desc *i2cdev = NULL;
+ 	int ret;
+ 
+ 	adap->dev.parent = master->dev.parent;
+@@ -2222,7 +2222,7 @@ static int i3c_master_i2c_adapter_init(struct i3c_master_controller *master)
+ 
+ static void i3c_master_i2c_adapter_cleanup(struct i3c_master_controller *master)
+ {
+-	struct i2c_dev_desc *i2cdev;
++	struct i2c_dev_desc *i2cdev = NULL;
+ 
+ 	i2c_del_adapter(&master->i2c);
+ 
+diff --git a/kernel/module.c b/kernel/module.c
+--- a/kernel/module.c
++++ b/kernel/module.c
+@@ -1289,7 +1289,7 @@ static int check_version(const struct load_info *info,
+ bad_version:
+ 	pr_warn("%s: disagrees about version of symbol %s\n",
+ 	       info->name, symname);
+-	return 0;
++	return 1;
+ }
+ 
+ static inline int check_modstruct_version(const struct load_info *info,

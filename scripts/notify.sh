@@ -2,8 +2,14 @@
 
 MODE="${1:?usage: notify.sh <success|failure|check|variant-failure>}"
 
-: "${TELEGRAM_BOT_TOKEN:?}"
-: "${TELEGRAM_CHAT_ID:?}"
+if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
+  echo "[WARN] Telegram secrets not configured; skipping notification ($MODE)"
+  exit 0
+fi
+
+[[ "$TELEGRAM_CHAT_ID" =~ ^[0-9]{10,}$ ]] && TELEGRAM_CHAT_ID="-100${TELEGRAM_CHAT_ID}"
+echo "::add-mask::${TELEGRAM_BOT_TOKEN}"
+echo "::add-mask::${TELEGRAM_CHAT_ID}"
 
 _tg_msg() {
   curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \

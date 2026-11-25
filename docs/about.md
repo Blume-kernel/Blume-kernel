@@ -16,9 +16,10 @@ The build system focuses on reproducible CI builds, GKI compatibility and Kernel
 
 ## Stack
 
-- Kernel: LineageOS `moto SM8550` (lineage-23.2, Linux 5.15)
-- Root: KernelSU-Next / Vanilla
-- SUSFS for filesystem spoofing
+- Kernel: Motorola `SM8550` (`android13-5.15-lts` 5.15.225)
+- Root: KernelSU-Next v3.4.2 / Vanilla
+- SUSFS v2.4.0 for filesystem spoofing
+- Extras: Droidspaces, NTSync, Baseband-Guard LSM, LRNG, BORE scheduler
 - CI/CD: GitHub Actions — fully automated build, package, release, notify
 - Built with GitHub Actions and the Android kernel toolchain.
 

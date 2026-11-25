@@ -4,10 +4,10 @@
 
 | Variant | Source | Root | Extras |
 |---------|--------|------|--------|
-| Blume-KSU-Next | LineageOS SM8550 | KernelSU-Next + SUSFS | BBG |
-| Blume-Vanilla | LineageOS SM8550 | Vanilla | — |
+| Blume-KSU-Next | ctOS SM8550 (5.15.225 LTS) | KernelSU-Next v3.4.2 + SUSFS v2.4.0 | BBG |
+| Blume-Vanilla | ctOS SM8550 (5.15.225 LTS) | Vanilla | — |
 
-All variants include: **WildKernels optimization patches** · **LZ4 ZRAM** · **Thin LTO** · **Droidspaces support**
+All variants include: **WildKernels optimization patches** · **BBRv3 TCP** · **BORE scheduler** · **NTSync** · **LRNG** · **LZ4 ZRAM** · **Thin LTO** · **Droidspaces support**
 
 ---
 
@@ -15,7 +15,7 @@ All variants include: **WildKernels optimization patches** · **LZ4 ZRAM** · **
 
 This kernel ships with [Droidspaces](https://github.com/ravindu644/Droidspaces-OSS) container support.
 
-Enabled configs: `SYSVIPC` · `IPC_NS` · `PID_NS` · `POSIX_MQUEUE` · `DEVTMPFS` · Netfilter extras
+Enabled configs: `SYSVIPC` · `IPC_NS` · `PID_NS` · `POSIX_MQUEUE` · `DEVTMPFS` · `BINFMT_MISC` · Netfilter extras
 
 kABI fix applied for GKI < 6.12 to prevent vendor module crashes on boot.
 
@@ -27,10 +27,10 @@ kABI fix applied for GKI < 6.12 to prevent vendor module crashes on boot.
 
 | | Blume-kernel |
 |--|---------------------|
-| Source | `LineageOS/android_kernel_motorola_sm8550` |
-| Branch | `lineage-23.2` |
+| Source | `ctOS-rtwo/android_kernel_motorola_sm8550` |
+| Base commit | `13a9dd56c42b` (`android13-5.15-lts` 5.15.225 merge) |
 | Config base | `gki_defconfig` |
 | Platform fragment | `vendor/kalama_GKI.config` (if present) |
 | Device fragments | `moto-kalama.config` · `moto-kalama-gki.config` · `moto-kalama-rtwo.config` |
-| Toolchain | Clang r563880c |
+| Toolchain | Neutron Clang (`06092026`) |
 | LTO | Thin |

@@ -36,7 +36,7 @@ jobs:
       - name: "📌 Read Moto source pin"
         id: moto-pin
         run: |
-          echo "hash=$(jq -r .moto_sublevel sources/source-pins.json)" >> $GITHUB_OUTPUT
+          echo "hash=$(jq -r '.moto_commit // .moto_sublevel' sources/source-pins.json)" >> $GITHUB_OUTPUT
 
       - name: "📦 Restore Moto source cache"
         id: moto-src-cache
@@ -60,7 +60,6 @@ jobs:
           key: moto-source-${{ steps.moto-pin.outputs.hash }}
 
       - name: "🔧 Fix source warnings"
-        if: inputs.ksu_type != 'none'
         run: bash scripts/fix-source-warnings.sh "${{ env.KERNEL_SRC }}"
 
       - name: "⚡ Configure ccache"
@@ -84,7 +83,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.ccache
-          key: ccache-${{ inputs.source_type }}-${{ inputs.ksu_type }}-${{ hashFiles('sources/source-pins.json') }}
+          key: ccache-${{ inputs.source_type }}-${{ inputs.ksu_type }}-${{ hashFiles('sources/source-pins.json', 'scripts/setup-toolchain.sh') }}
           restore-keys: |
             ccache-${{ inputs.source_type }}-${{ inputs.ksu_type }}-
 
@@ -99,18 +98,54 @@ jobs:
           DEFCONFIG:   ${{ inputs.defconfig }}
         run: bash scripts/apply-patches.sh
 
+      - name: "🎲 Setup LRNG"
+        working-directory: ${{ env.KERNEL_SRC }}
+        run: |
+          rm -rf drivers/char/lrng
+          git clone -q --depth=1 https://github.com/smuellerDD/lrng.git drivers/char/lrng
+          rm -rf drivers/char/lrng/.git
+
       - name: "🛡️ Setup BBG"
         if: inputs.ksu_type == 'ksun'
         working-directory: ${{ env.KERNEL_SRC }}
         run: |
+          rm -rf Baseband-guard security/baseband-guard
           git clone -q --depth=1 https://github.com/vc-teahouse/Baseband-guard.git
+          BBG_SHA=$(git -C Baseband-guard rev-parse --short=8 HEAD 2>/dev/null || echo "48d9fdea")
+          rm -rf Baseband-guard/.git
+          python3 - "$BBG_SHA" <<'PY'
+          import re, sys
+          sha = sys.argv[1]
+          p = "Baseband-guard/Makefile"
+          txt = open(p).read()
+          txt = re.sub(
+              r"else\n\s*\$\(info -- Baseband-guard: flask\.h not found, starting generation\)\n.*?endif",
+              "else\n"
+              "  $(info -- Baseband-guard: flask.h not found, starting generation)\n"
+              "  $(shell mkdir -p $(objtree)/security/selinux)\n"
+              "  $(shell $(HOSTCC) -I$(srctree)/scripts/selinux/genheaders -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89 $(HOSTLDFLAGS) -I$(srctree)/include/uapi -I$(srctree)/include -I$(srctree)/security/selinux/include -o $(objtree)/genheaders $(srctree)/scripts/selinux/genheaders/genheaders.c)\n"
+              "  $(shell cd $(objtree)/security/selinux && $(objtree)/genheaders flask.h av_permissions.h)\n"
+              "endif",
+              txt,
+              count=1,
+              flags=re.S,
+          )
+          txt = re.sub(
+              r"GIT_BIN :=.*?endif\n",
+              f"REPO_LINK := https://github.com/vc-teahouse/Baseband-guard\nCOMMIT_SHA := {sha}\n",
+              txt,
+              count=1,
+              flags=re.S,
+          )
+          open(p, "w").write(txt)
+          PY
           ln -sf ../Baseband-guard security/baseband-guard
           grep -q "baseband-guard" security/Makefile || \
             echo 'obj-$(CONFIG_BBG) += baseband-guard/' >> security/Makefile
           sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/selinux/selinux,baseband_guard/ } }' \
             security/Kconfig
           grep -q "baseband-guard/Kconfig" security/Kconfig || \
-            sed -i '/source "security\/keys\/Kconfig"/a source "security/baseband-guard/Kconfig"' \
+            sed -i '/source "security\/Kconfig\.hardening"/a source "security/baseband-guard/Kconfig"' \
             security/Kconfig
 
       - name: "🔑 Setup KSU + SUSFS"
@@ -122,7 +157,6 @@ jobs:
           work_dir:   ${{ env.WORK_DIR }}
 
       - name: "🐳 Droidspaces"
-        if: inputs.ksu_type != 'none'
         working-directory: ${{ env.KERNEL_SRC }}
         run: |
           bash ${{ github.workspace }}/scripts/droidspaces.sh \
@@ -141,8 +175,23 @@ jobs:
         run: |
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:8}"
-          sed -i "\$s|echo \"\\\$res\"|echo \"-Blume-Kernel-${SHORT_SHA}\"|" ./scripts/setlocalversion
-          sed -i 's/-dirty//' ./scripts/setlocalversion
+          python3 - "$SHORT_SHA" <<'PY'
+          import re, sys
+          sha = sys.argv[1]
+          p = "./scripts/setlocalversion"
+          txt = open(p).read()
+          txt = re.sub(
+              r"scm_version\(\)\n\{.*?\n\}",
+              'scm_version()\n{\n\tif test "$1" = "--short"; then\n\t\techo ""\n\t\treturn\n\tfi\n\tprintf "%s" "-' + sha + '"\n}',
+              txt,
+              count=1,
+              flags=re.S,
+          )
+          txt = txt.replace('if test -n "${BUILD_NUMBER}"; then', "if false; then")
+          txt = re.sub(r'echo "\$res"\s*$', f'echo "-Blume-Kernel-{sha}"\n', txt)
+          open(p, "w").write(txt)
+          PY
+          rm -f .scmversion
           KERNEL_TIMESTAMP=$(git log -1 --format=%ct)
           echo "KBUILD_BUILD_TIMESTAMP=$(date -u -d @${KERNEL_TIMESTAMP} +'%a %b %d %T UTC %Y')" >> $GITHUB_ENV
           echo "SOURCE_DATE_EPOCH=${KERNEL_TIMESTAMP}" >> $GITHUB_ENV
@@ -162,7 +211,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ~/.ccache
-          key: ccache-${{ inputs.source_type }}-${{ inputs.ksu_type }}-${{ hashFiles('sources/source-pins.json') }}
+          key: ccache-${{ inputs.source_type }}-${{ inputs.ksu_type }}-${{ hashFiles('sources/source-pins.json', 'scripts/setup-toolchain.sh') }}
 
       - name: "🔍 Verify kernel"
         run: bash scripts/verify-kernel.sh
@@ -200,8 +249,10 @@ jobs:
       - name: "🏷️ Capture uname"
         run: |
           UNAME=$(grep UTS_RELEASE \
+            ${{ env.WORK_DIR }}/out/dist/include/generated/utsrelease.h \
             ${{ env.WORK_DIR }}/out/include/generated/utsrelease.h 2>/dev/null \
-            | cut -d'"' -f2 || echo "unknown")
+            | head -1 | cut -d'"' -f2 || true)
+          [ -n "$UNAME" ] || UNAME=$(cat ${{ env.WORK_DIR }}/out/dist/kernel_version.txt 2>/dev/null || echo "unknown")
           echo "$UNAME" > ${{ env.WORK_DIR }}/out/dist/kernel_uname.txt
           echo "Kernel uname: $UNAME"
 

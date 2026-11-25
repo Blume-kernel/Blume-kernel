@@ -12,16 +12,16 @@ apply_patch() {
 
   local missing=""
   while IFS= read -r line; do
-    [[ "$line" =~ ^---\ a/(.+)$ ]] || continue
+    [[ "$line" =~ ^---\ a/([^[:space:]]+) ]] || continue
     local t="${BASH_REMATCH[1]}"
     [[ "$t" == "/dev/null" ]] && continue
     [ -f "$t" ] || missing="$missing $t"
   done < "$TMP"
   [ -n "$missing" ] && { echo "[SKIP] $NAME — missing:$missing"; rm -f "$TMP"; return 0; }
 
-  patch -p1 --dry-run --forward --quiet < "$TMP" 2>/dev/null || { echo "[SKIP] $NAME — already applied"; rm -f "$TMP"; return 0; }
+  patch -p1 --dry-run --forward --fuzz=3 --quiet < "$TMP" 2>/dev/null || { echo "[SKIP] $NAME — already applied"; rm -f "$TMP"; return 0; }
 
-  if patch -p1 --forward < "$TMP"; then
+  if patch -p1 --forward --fuzz=3 < "$TMP"; then
     echo "[OK]  $NAME"
   else
     [ "$STRICT" = "1" ] && { echo "[FAIL] $NAME"; rm -f "$TMP"; return 1; }

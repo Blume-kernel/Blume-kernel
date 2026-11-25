@@ -93,13 +93,18 @@ if $_FRAG_MERGED; then
     -e ZRAM_DEF_COMP_LZ4 \
     -d ZRAM_DEF_COMP_LZO \
     --set-str ZRAM_DEF_COMP "lz4"
-    echo "[MOTO] Re-enforcing TCP_CONG=westwood after fragment merge"
+    echo "[MOTO] Re-enforcing TCP_CONG=bbr3 after fragment merge"
     ./scripts/config --file "${OUT_DIR}/dist/.config" \
+    -e TCP_CONG_ADVANCED \
     -e TCP_CONG_BBR \
+    -e TCP_CONG_BBR3 \
     -e TCP_CONG_WESTWOOD \
-    --set-str DEFAULT_TCP_CONG "westwood" \
+    -e NET_SCH_FQ \
+    -d DEFAULT_CUBIC \
+    -d DEFAULT_WESTWOOD \
     -d DEFAULT_BBR \
-    -e DEFAULT_WESTWOOD
+    -e DEFAULT_BBR3 \
+    --set-str DEFAULT_TCP_CONG "bbr3"
   make "${MAKE_FLAGS[@]}" olddefconfig
 fi
 

@@ -29,15 +29,19 @@ jobs:
         if: env.HAS_UPDATE == 'true'
         run: |
           jq -n \
-            --arg moto  "$CHECK_MOTO_SUB" \
-            --arg ksun  "$CHECK_KSUN_TAG" \
-            --arg susfs "$CHECK_SUSFS_TAG" \
-            --arg wild  "$CHECK_WILDKERNELS_COMMIT" \
+            --arg moto       "$CHECK_MOTO_SUB" \
+            --arg moto_sha   "$CHECK_MOTO_COMMIT" \
+            --arg ksun       "$CHECK_KSUN_TAG" \
+            --arg susfs      "$CHECK_SUSFS_TAG" \
+            --arg susfs_kver "$CHECK_SUSFS_KERNEL_VER" \
+            --arg wild       "$CHECK_WILDKERNELS_COMMIT" \
             '{
-              moto_sublevel: $moto,
-              ksun_tag:      $ksun,
-              wildkernels_commit: $wild,
-              susfs_tag:     $susfs
+              moto_sublevel:        $moto,
+              moto_commit:          $moto_sha,
+              ksun_tag:             $ksun,
+              wildkernels_commit:   $wild,
+              susfs_tag:            $susfs,
+              susfs_kernel_version: $susfs_kver
             }' > sources/source-pins.json
 
           git config user.name  "github-actions[bot]"
