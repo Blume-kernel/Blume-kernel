@@ -67,7 +67,9 @@ jobs:
       defconfig:     ${{ matrix.variant.defconfig }}
       clo_fragment:  ${{ matrix.variant.clo_fragment || '' }}
       build_type:    ${{ inputs.build_type || 'stable' }}
-    secrets: inherit
+    secrets:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
 
   release:
     name: "package and release"
@@ -79,7 +81,10 @@ jobs:
       build_type: ${{ inputs.build_type || 'stable' }}
       start_time: ${{ needs.setup.outputs.start_time }}
       workflow_type: aio
-    secrets: inherit
+    secrets:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+      TELEGRAM_TOPIC_ID:  ${{ secrets.TELEGRAM_TOPIC_ID }}
 
   notify-failure:
     name: "notify failure"
@@ -92,8 +97,8 @@ jobs:
           fetch-depth: 1
       - name: "telegram"
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || vars.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID || vars.TELEGRAM_CHAT_ID }}
           RUN_URL:    "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           RUN_NUMBER: "${{ github.run_number }}"
           BUILD_STATUS: "${{ needs.build.result }}"

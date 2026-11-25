@@ -11,6 +11,9 @@ on:
       defconfig:     { type: string, required: true }
       clo_fragment:  { type: string, required: false }
       build_type:    { type: string, required: true }
+    secrets:
+      TELEGRAM_BOT_TOKEN: { required: false }
+      TELEGRAM_CHAT_ID:   { required: false }
 
 env:
   OUT_DIR: "out"
@@ -229,8 +232,8 @@ jobs:
       - name: "📣 Notify variant failure"
         if: failure()
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || vars.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID || vars.TELEGRAM_CHAT_ID }}
           VARIANT:     ${{ inputs.variant_name }}
           SOURCE_TYPE: ${{ inputs.source_type }}
           BUILD_TYPE:  ${{ inputs.build_type }}
