@@ -6,15 +6,18 @@ env:
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 2 * * 1'
+    - cron: '0 6 * * *'
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   check:
     name: "🔍 Check upstream versions"
     runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.flags.outputs.should_build }}
 
     steps:
       - uses: actions/checkout@v4.2.2
@@ -31,6 +34,8 @@ jobs:
           jq -n \
             --arg moto       "$CHECK_MOTO_SUB" \
             --arg moto_sha   "$CHECK_MOTO_COMMIT" \
+            --arg lts_base   "$CHECK_GKI_LTS_BASE" \
+            --arg lts_sha    "$CHECK_GKI_LTS_COMMIT" \
             --arg ksun       "$CHECK_KSUN_TAG" \
             --arg susfs      "$CHECK_SUSFS_TAG" \
             --arg susfs_kver "$CHECK_SUSFS_KERNEL_VER" \
@@ -38,6 +43,8 @@ jobs:
             '{
               moto_sublevel:        $moto,
               moto_commit:          $moto_sha,
+              gki_lts_base_commit:  $lts_base,
+              gki_lts_commit:       $lts_sha,
               ksun_tag:             $ksun,
               wildkernels_commit:   $wild,
               susfs_tag:            $susfs,
@@ -47,8 +54,12 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add sources/source-pins.json
-          git commit -m "chore: update source pins [skip ci]"
+          git commit -m "chore: update source pins (${CHECK_MOTO_SUB}) [skip ci]"
           git push
+
+      - name: "📤 Export build trigger flag"
+        id: flags
+        run: echo "should_build=${SHOULD_BUILD:-false}" >> "$GITHUB_OUTPUT"
 
       - name: "telegram report"
         if: always()
@@ -58,3 +69,16 @@ jobs:
           TELEGRAM_TOPIC_ID:  ${{ secrets.TELEGRAM_TOPIC_ID || vars.TELEGRAM_TOPIC_ID }}
           RUN_URL: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         run: bash scripts/notify.sh check
+
+  auto-build:
+    name: "🚀 Auto-build updated kernel"
+    needs: [check]
+    if: needs.check.outputs.should_build == 'true'
+    uses: ./.github/workflows/build-aio.yml
+    with:
+      zip_mode: per-variant
+      build_type: stable
+    secrets:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+      TELEGRAM_TOPIC_ID:  ${{ secrets.TELEGRAM_TOPIC_ID }}

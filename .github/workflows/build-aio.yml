@@ -7,6 +7,20 @@ env:
 on:
   schedule:
     - cron: '0 0 */5 * *'
+  workflow_call:
+    inputs:
+      zip_mode:
+        type: string
+        required: false
+        default: per-variant
+      build_type:
+        type: string
+        required: false
+        default: stable
+    secrets:
+      TELEGRAM_BOT_TOKEN: { required: false }
+      TELEGRAM_CHAT_ID:   { required: false }
+      TELEGRAM_TOPIC_ID:  { required: false }
   workflow_dispatch:
     inputs:
       zip_mode:
@@ -74,7 +88,7 @@ jobs:
   release:
     name: "package and release"
     needs: [setup, build]
-    if: success() && github.event_name != 'schedule'
+    if: success() && (github.event_name != 'schedule' || github.workflow == '🔍 Check Source Updates')
     uses: ./.github/workflows/release.yml
     with:
       zip_mode:   ${{ inputs.zip_mode || 'per-variant' }}

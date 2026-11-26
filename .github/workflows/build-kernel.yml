@@ -62,6 +62,9 @@ jobs:
           path: ${{ env.KERNEL_SRC }}
           key: moto-source-${{ steps.moto-pin.outputs.hash }}
 
+      - name: "⬆️ Apply Android 13 5.15 LTS upstream update"
+        run: bash scripts/apply-lts-update.sh
+
       - name: "🔧 Fix source warnings"
         run: bash scripts/fix-source-warnings.sh "${{ env.KERNEL_SRC }}"
 

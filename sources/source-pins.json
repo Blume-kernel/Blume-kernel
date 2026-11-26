@@ -1,6 +1,8 @@
 {
-  "moto_sublevel": "v5.15.225",
+  "moto_sublevel": "v5.15.226",
   "moto_commit": "13a9dd56c42b7d708542afab690ee7e419f0dc3a",
+  "gki_lts_base_commit": "0d108e1e8c7b51616fafc1e0c9bef100c9d97d86",
+  "gki_lts_commit": "52f96c99c39e88251405a7b996c5a3a91c9b30a9",
   "ksun_tag": "v3.4.2",
   "wildkernels_commit": "70c394f16d82b0f85a4f07617630d82dde6d203c",
   "susfs_tag": "v1.5.2+_R28",

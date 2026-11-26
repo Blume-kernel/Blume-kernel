@@ -4,8 +4,8 @@
 
 | Variant | Source | Root | Extras |
 |---------|--------|------|--------|
-| Blume-KSU-Next | ctOS SM8550 (5.15.225 LTS) | KernelSU-Next v3.4.2 + SUSFS v2.4.0 | BBG |
-| Blume-Vanilla | ctOS SM8550 (5.15.225 LTS) | Vanilla | — |
+| Blume-KSU-Next | ctOS SM8550 (5.15.226+ LTS) | KernelSU-Next v3.4.2 + SUSFS v2.4.0 | BBG |
+| Blume-Vanilla | ctOS SM8550 (5.15.226+ LTS) | Vanilla | — |
 
 All variants include: **WildKernels optimization patches** · **BBRv3 TCP** · **BORE scheduler** · **NTSync** · **LRNG** · **LZ4 ZRAM** · **Thin LTO** · **Droidspaces support**
 
