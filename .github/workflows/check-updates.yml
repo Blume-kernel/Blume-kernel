@@ -57,16 +57,16 @@ jobs:
           git commit -m "chore: update source pins (${CHECK_MOTO_SUB}) [skip ci]"
           git push
 
-      - name: "🚀 Trigger auto-build on updated main"
+      - name: "🚀 Trigger auto-build on updated branch"
         if: env.SHOULD_BUILD == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh workflow run build-aio.yml \
-            --ref main \
+            --ref "${{ github.ref_name }}" \
             -f zip_mode=per-variant \
             -f build_type=stable
-          echo "[OK] Dispatched build-aio.yml on updated main"
+          echo "[OK] Dispatched build-aio.yml on updated ${{ github.ref_name }}"
 
       - name: "telegram report"
         if: always()
