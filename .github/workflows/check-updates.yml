@@ -26,6 +26,8 @@ jobs:
 
       - name: "🔍 Fetch and compare upstream versions"
         id: versions
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash scripts/check-sources.sh
 
       - name: "📌 Update source-pins.json"

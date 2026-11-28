@@ -3,17 +3,27 @@ set -e
 
 PINS_FILE="sources/source-pins.json"
 
-_curl() { curl -sL --retry 3 --retry-delay 2 "$@" || echo ""; }
+_curl() { curl -sfL --retry 3 --retry-delay 2 "$@" || echo ""; }
+_gh_curl() {
+  curl -sfL --retry 3 --retry-delay 2 \
+    ${GITHUB_TOKEN:+-H "Authorization: Bearer ${GITHUB_TOKEN}"} \
+    -H "Accept: application/vnd.github+json" "$@" || echo ""
+}
 _pin() { jq -r ".${1} // \"unknown\"" "$PINS_FILE" 2>/dev/null || echo "unknown"; }
 
-KSUN_TAG=$(_curl "https://api.github.com/repos/KernelSU-Next/KernelSU-Next/tags" | jq -r '.[0].name // "unknown"' 2>/dev/null || echo "unknown")
-[ -n "$KSUN_TAG" ] && [ "$KSUN_TAG" != "null" ] || KSUN_TAG="unknown"
+PIN_KSUN=$(_pin "ksun_tag")
+PIN_SUSFS=$(_pin "susfs_tag")
+PIN_SUSFS_KVER=$(_pin "susfs_kernel_version")
+PIN_WILDKERNELS=$(_pin "wildkernels_commit")
 
-SUSFS_TAG=$(_curl "https://api.github.com/repos/sidex15/susfs4ksu-module/tags" | jq -r 'if type=="array" and length>0 then .[0].name else "unknown" end' 2>/dev/null || echo "unknown")
-[ -n "$SUSFS_TAG" ] && [ "$SUSFS_TAG" != "null" ] || SUSFS_TAG="unknown"
+KSUN_TAG=$(_gh_curl "https://api.github.com/repos/KernelSU-Next/KernelSU-Next/tags?per_page=1" | jq -r 'if type=="array" and length>0 then .[0].name else "unknown" end' 2>/dev/null || echo "unknown")
+[ -n "$KSUN_TAG" ] && [ "$KSUN_TAG" != "null" ] && [ "$KSUN_TAG" != "unknown" ] || KSUN_TAG="$PIN_KSUN"
 
-WILDKERNELS_COMMIT=$(_curl "https://api.github.com/repos/WildKernels/kernel_patches/commits/main" | jq -r '.sha // "unknown"' 2>/dev/null || echo "unknown")
-[ -n "$WILDKERNELS_COMMIT" ] && [ "$WILDKERNELS_COMMIT" != "null" ] || WILDKERNELS_COMMIT="unknown"
+SUSFS_TAG=$(_gh_curl "https://api.github.com/repos/sidex15/susfs4ksu-module/tags?per_page=1" | jq -r 'if type=="array" and length>0 then .[0].name else "unknown" end' 2>/dev/null || echo "unknown")
+[ -n "$SUSFS_TAG" ] && [ "$SUSFS_TAG" != "null" ] && [ "$SUSFS_TAG" != "unknown" ] || SUSFS_TAG="$PIN_SUSFS"
+
+WILDKERNELS_COMMIT=$(_gh_curl "https://api.github.com/repos/WildKernels/kernel_patches/commits/main" | jq -r '.sha // "unknown"' 2>/dev/null || echo "unknown")
+[ -n "$WILDKERNELS_COMMIT" ] && [ "$WILDKERNELS_COMMIT" != "null" ] && [ "$WILDKERNELS_COMMIT" != "unknown" ] || WILDKERNELS_COMMIT="$PIN_WILDKERNELS"
 
 PIN_MOTO=$(_pin "moto_sublevel")
 PIN_MOTO_COMMIT=$(_pin "moto_commit")
@@ -42,12 +52,7 @@ MOTO_SUB=$(echo "$MOTO_RAW" | awk -F' *= *' '/^VERSION / {v=$2} /^PATCHLEVEL / {
 [ -n "$MOTO_SUB" ] && [ "$MOTO_SUB" != "unknown" ] || MOTO_SUB="$PIN_MOTO"
 
 SUSFS_KERNEL_VER=$(_curl "https://gitlab.com/simonpunk/susfs4ksu/-/raw/gki-android13-5.15/kernel_patches/include/linux/susfs.h" | awk -F'"' '/^#define SUSFS_VERSION / {print $2; exit}')
-SUSFS_KERNEL_VER="${SUSFS_KERNEL_VER:-v2.4.0}"
-
-PIN_KSUN=$(_pin "ksun_tag")
-PIN_SUSFS=$(_pin "susfs_tag")
-PIN_SUSFS_KVER=$(_pin "susfs_kernel_version")
-PIN_WILDKERNELS=$(_pin "wildkernels_commit")
+SUSFS_KERNEL_VER="${SUSFS_KERNEL_VER:-${PIN_SUSFS_KVER:-v2.4.0}}"
 
 UPDATES=()
 SHOULD_BUILD="false"
