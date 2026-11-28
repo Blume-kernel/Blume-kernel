@@ -27,6 +27,7 @@ case "$KSU_TYPE" in
 esac
 
 [ "$BUILD_TYPE" = "testing" ] && SUFFIX="-testing" || SUFFIX=""
+BUILD_DATE=$(date +'%Y%m%d')
 ZIP_NAME="AK3-${SRC_LABEL}-${KSU_LABEL}-${KERNEL_VERSION}-$(date +'%Y-%m')${SUFFIX}.zip"
 
 case "$KSU_TYPE" in

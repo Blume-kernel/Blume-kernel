@@ -6,7 +6,7 @@ env:
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 6 1,15 * *'
 
 permissions:
   contents: write
@@ -16,8 +16,6 @@ jobs:
   check:
     name: "🔍 Check upstream versions"
     runs-on: ubuntu-latest
-    outputs:
-      should_build: ${{ steps.flags.outputs.should_build }}
 
     steps:
       - uses: actions/checkout@v4.2.2
@@ -59,9 +57,16 @@ jobs:
           git commit -m "chore: update source pins (${CHECK_MOTO_SUB}) [skip ci]"
           git push
 
-      - name: "📤 Export build trigger flag"
-        id: flags
-        run: echo "should_build=${SHOULD_BUILD:-false}" >> "$GITHUB_OUTPUT"
+      - name: "🚀 Trigger auto-build on updated main"
+        if: env.SHOULD_BUILD == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run build-aio.yml \
+            --ref main \
+            -f zip_mode=per-variant \
+            -f build_type=stable
+          echo "[OK] Dispatched build-aio.yml on updated main"
 
       - name: "telegram report"
         if: always()
@@ -71,16 +76,3 @@ jobs:
           TELEGRAM_TOPIC_ID:  ${{ secrets.TELEGRAM_TOPIC_ID || vars.TELEGRAM_TOPIC_ID }}
           RUN_URL: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         run: bash scripts/notify.sh check
-
-  auto-build:
-    name: "🚀 Auto-build updated kernel"
-    needs: [check]
-    if: needs.check.outputs.should_build == 'true'
-    uses: ./.github/workflows/build-aio.yml
-    with:
-      zip_mode: per-variant
-      build_type: stable
-    secrets:
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
-      TELEGRAM_TOPIC_ID:  ${{ secrets.TELEGRAM_TOPIC_ID }}

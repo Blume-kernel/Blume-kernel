@@ -270,6 +270,5 @@ jobs:
             ${{ env.WORK_DIR }}/${{ env.ZIP_NAME }}
             ${{ env.WORK_DIR }}/out/dist/kernel_version.txt
             ${{ env.WORK_DIR }}/out/dist/kernel_uname.txt
-            ${{ env.WORK_DIR }}/ksun_tag.txt
-            ${{ env.WORK_DIR }}/ksun_version.txt
+            ${{ env.WORK_DIR }}/ksun_*.txt
           retention-days: 1
